@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block scripts %}
+    {{ block.super }}
+<script>
+
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = jQuery.trim(cookies[i]);
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    var csrftoken = getCookie('csrftoken');
+
+    var xhr;
+
+    // 공백일 경우 나오는 메세지
+    function registerMember() {
+
+        memberid = document.getElementById("member_id").value;
+        if (memberid == "") {
+            alert("아이디가 비었습니다.")
+            document.getElementById("member_id").focus();
+            return false;
+        }
+
+        memberpwd = document.getElementById("member_pwd").value;
+        if (memberpwd == "") {
+            alert("비밀번호를 쓰세요.")
+            document.getElementById("member_pwd").focus();
+            return false;
+        }
+
+        memberpwd2 = document.getElementById("member_pwd2").value;
+        if (memberpwd2 == "") {
+            alert("비밀번호 확인하세요.")
+            document.getElementById("member_pwd2").focus();
+            return false;
+        }
+
+        if (memberpwd != memberpwd2) {
+            alert("비밀번호가 다릅니다.")
+            document.getElementById("member_pwd2").focus();
+            return false;
+        }
+
+        membername = document.getElementById("member_name").value;
+        memberemail = document.getElementById("member_email").value;
+
+        // 약관에 꼭 동의하게 만들기
+        wflag = document.getElementById("warrantcheck").checked;
+        if (wflag == false) {
+            alert("약관에 동의해주세요.")
+            return false;
+        }
+        
+        // 중복체크 하게 만들기
+        idchk = document.getElementById("idcheck").value;
+        if (idchk != "1" ){
+            alert("중복 체크하세요.")
+            return false;
+        }
+
+        // 가입하기 후 메세지 보이고 홈으로 돌아가기
+        var strurl = "member_insert?member_id =" + memberid + "member_pwd =" + memberpwd + "member_pwd2 =" + memberpwd2 + "member_email =" + memberemail + "member_name =" + membername
+        // alert(strurl);
+        // return false;
+
+        xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4) {
+                var data = xhr.responseText;
+
+                var obj = JSON.parse(data);
+                alert(obj.result_msg);
+                location.href="board";
+            }
+        };
+        xhr.open("POST", strurl);
+        xhr.setRequestHeader("X-CSRFToken", csrftoken);
+        xhr.send(null);
+    }
+    // 아이디 체크하기
+    function checkid() {
+
+        // 아이디 비었을 경우 나오는 메세지
+        memberid = document.getElementById("member_id").value;
+        if (memberid == "") {
+            alert("아이디가 비었습니다.");
+            document.getElementById("member_id").focus();
+            return false;
+        }
+
+        var strurl = "member_idcheck?member_id=" + memberid;
+        // alert(strurl);
+        // return false;
+
+        xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+
+            // 만약 아이디가 중복이라면 member_view의 [flag]1의 메세지를
+            if (xhr.readyState == 4) {
+                var data = xhr.responseText;
+
+                var obj = JSON.parse(data);
+                if (obj.flag == "1") {
+                    alert(obj.result_msg);
+                    document.getElementById("member_id").focus();
+                }
+                // 만약 아이디가 중복이 아니라면 member_view의 [flag]0의 메세지 후 통과
+                else {
+                    alert(obj.result_msg);
+                    document.getElementById("idcheck").value = "1";
+                    document.getElementById("member_id").disabled = true;
+                }
+            }
+        }
+        xhr.open("POST", strurl);
+        xhr.setRequestHeader("X-CSRFToken", csrftoken);
+        xhr.send(null);
+    }
+
+</script>
+
+{% endblock %}
+
+{% block body %}
+
+{% include "navbar.html" %}
+
+<main id="main">
+    <input type="hidden" id="idcheck" value="0" />
+
+    <!-- ======= Breadcrumbs ======= -->
+    <section id="breadcrumbs" class="breadcrumbs">
+        <div class="container">
+
+            <div class="d-flex justify-content-between align-items-center">
+                <h4>회원가입</h4>
+                <ol>
+                    <li><a href="/">Home</a></li>
+                    <li>등록</li>
+                </ol>
+            </div>
+
+        </div>
+    </section><!-- End Breadcrumbs -->
+
+    <!-- ======= Services Section ======= -->
+    <section id="services" class="services">
+        <div class="container">
+
+            <div class="section-title" data-aos="fade-up">
+                <h3>회원가입</h3>
+
+                <form action="pan_insert" id="frmBoard">
+                </form>
+
+                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                    <tr style="height:45px;border-top:solid 1px #dddddd;">
+                        <td width="20%" align="center">아이디(필수)</td>
+                        <td width="80%" align="left">
+                            <input type="input" placeholder="아이디" name="member_id" id="member_id" style="width:30%;" required>
+                            <button class="btn btn-outline-success my-2 my-sm-0" style="..." onclick="checkid();"> 중복확인 </button>
+                                        <!-- 온체크 = 체크아이디 -->
+                        </td>
+                    </tr>
+
+                    <tr style="height:45px;border-top:solid 1px #dddddd;">
+                        <td width="20%" align="center">비밀번호</td>
+                        <td width="80%" align="left">
+                            <input type="password" placeholder="비밀번호 " name="member_pwd" id="member_pwd" style="width:30%;" required>
+                            확인 <input type="password" placeholder="비번 확인" name="member_pwd2" id="member_pwd2" style="width:30%;" required>
+                        </td>
+                    </tr>
+
+                    <tr style="height:45px;border-top:solid 1px #dddddd;">
+                        <td width="20%" align="center">이름</td>
+                        <td width="80%" align="left">
+                            <input type="input" placeholder="이름" name="member_name" id="member_name" style="width:30%;">
+                        </td>
+
+                    <tr style="height:45px;border-top:solid 1px #dddddd;">
+                        <td width="20%" align="center">이메일</td>
+                        <td width="80%" align="left">
+                            <input type="input" placeholder="이메일" name="member_email" id="member_email" style="width:30%;">
+                        </td>
+
+                    <tr style="height:45px;border-top:solid 1px #dddddd;">
+                        <td width="20%" align="center">약관</td>
+                        <td width="80%" align="left">
+                            <div style="margin: 10px 0;padding: 10px; background-color: darkgray;">
+                                [약관]<br>(약관 설명)
+                            </div>
+                            약관 동의 <input type="checkbox" id="warrantcheck" />
+                        </td>
+
+                    <tr style="..." align="center">
+                        <td width="100%" colspan="2">
+                            <button class="btn btn-outline-success my-2 my-sm-0" style="..."
+                             onclick="registerMember();"> 가입 </button>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+        </div>
+    </section><!-- End Services Section -->
+
+</main><!-- End #main -->
+
+{% include "footer.html" %}
+
+{% endblock %}
